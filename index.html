@@ -121,6 +121,16 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .fb-msg{margin-top:10px;text-align:center;font-size:13.5px;font-weight:700;border-radius:8px;padding:9px;display:none}
 .fb-msg.ok{display:block;background:#dcfce7;color:#166534}
 .fb-msg.err{display:block;background:#fee2e2;color:#991b1b}
+.code-tools{display:flex;align-items:center;gap:14px;margin-bottom:10px;direction:rtl;flex-wrap:wrap}
+.copy-btn{padding:8px 14px;border:none;border-radius:8px;background:#1e1e1e;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:.2s}
+.copy-btn.done{background:#16a34a}
+.ku-sw{display:flex;align-items:center;gap:10px;padding:2px 14px 2px 10px;border:1.5px solid #bae6fd;border-radius:999px;background:#f0f9ff;font-weight:700;font-size:13px;color:#0c4a6e;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .25s,border-color .25s,color .25s}
+.ku-sw:has(input:checked){background:#dbeafe;border-color:#60a5fa;color:#1d4ed8}
+.ku-sw input{display:none}
+.ku-sw .sw{position:relative;display:inline-block;width:54px;height:22px;margin:8px 4px;border-radius:11px;background:#cbd5e1;transition:background .25s;direction:ltr}
+.ku-sw .sw::after{content:'';position:absolute;top:-6px;left:-3px;width:34px;height:34px;border-radius:50%;background:#94a3b8;box-shadow:0 2px 6px rgba(0,0,0,.28);transition:left .25s,background .25s,box-shadow .25s}
+.ku-sw input:checked+.sw{background:#93c5fd}
+.ku-sw input:checked+.sw::after{left:23px;background:#2563eb;box-shadow:0 0 14px rgba(37,99,235,.7)}
 </style>
 </head>
 <body>
@@ -248,6 +258,17 @@ function fbBox(){return `<div class="fb-box"><div class="fb-title">✉️ درو
 <button class="fb-send" id="fbSendBtn" onclick="fbSendDirect()">📤 ناردنی نامە بە شێوەی ڕاستەوخۆ</button>
 <button class="fb-send fb-send2" onclick="fbSendEmail()">📧 ناردنی نامە بە ئیمەیل</button>
 <div class="fb-msg" id="fbMsg"></div></div>`;}
+const KU=[['"Sumation element = " + array.Average()','"تێکڕای بەهاکان = " + array.Average()'],['Sumation element = 44.3','تێکڕای بەهاکان = 44.3'],['Largest element = ','گەورەترین بەها = '],['Smallest element = ','بچووکترین بەها = '],['Sumation element = ','کۆی بەهاکان = '],['Array alpha:','ڕیزی alpha:'],['Enter number ','ژمارە بنووسە '],['even count is: ','ژمارەی جووتەکان: '],['odd count is: ','ژمارەی تاکەکان: '],['sum of even values is: ','کۆی جووتەکان: '],['sum of odd values is: ','کۆی تاکەکان: ']];
+let curLab=0,KU_ON={};
+function kuText(t){let r=t;KU.forEach(([a,b])=>{r=r.split(a).join(b);});return r;}
+function curCode(k){return(curLab===4&&KU_ON[k])?kuText(E[k].c):E[k].c;}
+function toggleKu(k,on){KU_ON[k]=on;const c=document.querySelectorAll('.content')[k+1];
+ c.querySelector('.example > .code-box pre').innerHTML=curCode(k).split('\n').map(hl).join('\n');
+ c.querySelector('.example > .output-box .output-content').textContent=on?kuText(E[k].o):E[k].o;pinSync();}
+function copyCode(k,btn){const t=curCode(k);
+ const ok=()=>{btn.textContent='✅ کۆپی کرا';btn.classList.add('done');setTimeout(()=>{btn.textContent='📋 کۆپی کردنی کۆد';btn.classList.remove('done');},1600);};
+ const fb=()=>{const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok();}catch(e){btn.textContent='❌ کۆپی نەکرا';}a.remove();};
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(fb);}else fb();}
 let E,EX,EXSUM,MORE;
 const LX=/((?:\d+(?:\s*→\s*\d+)+)|(?:[A-Za-z0-9_]+(?:\s*(?:&lt;|&gt;|&amp;|[=!|+\-*\/%÷×])+\s*[A-Za-z0-9_]+)+)|(?:[A-Za-z][A-Za-z0-9_]*(?: [A-Za-z][A-Za-z0-9_]*)*[.!?]?))/g;
 function fx(h){let sk=0;return String(h).split(/(<[^>]+>)/).map(p=>{if(p[0]==='<'){if(/^<code[\s>]/.test(p))sk++;else if(p==='</code>')sk--;return p;}return sk>0?p:p.replace(LX,'<bdi dir="ltr">$1</bdi>');}).join('');}
@@ -296,10 +317,11 @@ function build(lab){
  views.innerHTML=`<div class="content active"><div class="intro"><h2>🎯 <bdi dir="ltr">Lab ${lab+1}</bdi></h2>${intro}${fbBox()}</div></div>`+
  E.map((e,k)=>{const L=e.c.split('\n');
  return `<div class="content"><div class="example"><div class="title-row"><div class="example-title">${tfx(e.t)}</div><span class="pdf-page">${e.p}</span></div>
+<div class="code-tools"><button class="copy-btn" onclick="copyCode(${k},this)">📋 کۆپی کردنی کۆد</button>${lab===4?`<label class="ku-sw"><span>نموونەی کوردی</span><input type="checkbox" onchange="toggleKu(${k},this.checked)"><i class="sw"></i></label>`:''}</div>
 <div class="code-box"><div class="line-numbers">${L.map((_,i)=>`<span>${i+1}</span>`).join('')}</div><div class="code-content"><pre>${L.map(hl).join('\n')}</pre></div></div>
 <div class="output-box"><div class="output-header">:دەرەنجام &nbsp;|&nbsp; Output:</div><div class="output-content">${esc(e.o)}</div></div>
 <div class="expl-box"><div class="expl-title">📚 ڕوونکردنەوە:</div><div class="walk"><span class="wl">کارەکەی ئەم کۆدە بەم شێوەیەیە:</span>${fx(EXSUM[k])}</div><ul>${expl(e,EX[k])}</ul></div>${moreHtml(k)}</div></div>`}).join('');}
-function setLab(i){pinReset();const d=LABS[i];E=d.E;EX=d.EX;EXSUM=d.EXSUM;MORE=d.MORE;
+function setLab(i){pinReset();curLab=i;KU_ON={};const d=LABS[i];E=d.E;EX=d.EX;EXSUM=d.EXSUM;MORE=d.MORE;
  document.querySelectorAll('.lab').forEach((b,k)=>b.classList.toggle('active',k===i));
  build(i);curTab=0;pinSync();window.scrollTo({top:0,behavior:'smooth'});}
 let curTab=0,inMore=false;const PS=[{on:false,wide:false,lp:false,t:null,w:'pinWrap',x:'pinTxt'},{on:false,wide:false,lp:false,t:null,w:'pinWrap2',x:'pinTxt2'}];
